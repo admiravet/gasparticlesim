@@ -261,6 +261,7 @@
       <label>Initial Mode</label>
       <div class="mode-btns">
         <button class="mode-btn active" data-mode="maxwell" onclick="setMode(this)">Random velocities</button>
+        <button class="mode-btn" data-mode="uniform" onclick="setMode(this)">Uniform velocity<br><span style="color:var(--muted);font-size:0.55rem">Same speed, same direction</span></button>
         <button class="mode-btn" data-mode="single" onclick="setMode(this)">Single Particle<br><span style="color:var(--muted);font-size:0.55rem">One moving, rest at rest</span></button>
       </div>
     </div>
@@ -378,6 +379,9 @@ function createParticles(n, radius, speedScale) {
       const ang = Math.random() * 2 * Math.PI;
       vx = spd * Math.cos(ang);
       vy = spd * Math.sin(ang);
+    } else if (mode === 'uniform') {
+      vx = speedScale * 4;
+      vy = 0;
     } else if (mode === 'single') {
       if (i === 0) {
         vx = speedScale * 4;
@@ -599,11 +603,11 @@ function renderPlot() {
   pctx.fillText(axisMax.toFixed(1), W - 28, H - 2);
   pctx.fillText(Math.round(axisYMax), 4, 10);
   pctx.fillStyle = '#5b8dee';
-  pctx.fillText('— MB fit', W - 54, 12);
+  pctx.fillText('— Rayleigh fit', W - 88, 12);
   pctx.fillStyle = '#f4845f';
-  pctx.fillText(`— mean ${avgSpd.toFixed(2)}`, W - 80, 24);
+  pctx.fillText(`— mean ${avgSpd.toFixed(2)}`, W - 88, 24);
   pctx.fillStyle = '#52c77a';
-  pctx.fillText(`— rms ${rms.toFixed(2)}`, W - 72, 36);
+  pctx.fillText(`— rms ${rms.toFixed(2)}`, W - 88, 36);
 }
 
 // ─── STATS ─────────────────────────────────────────────────────────────────
