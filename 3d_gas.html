@@ -260,6 +260,7 @@
       <div class="mode-btns">
         <button class="mode-btn active" data-mode="maxwell" onclick="setMode(this)">Random velocities</button>
         <button class="mode-btn" data-mode="single" onclick="setMode(this)">Single Particle<br><span style="color:var(--muted);font-size:0.55rem">One moving, rest at rest</span></button>
+        <button class="mode-btn" data-mode="uniform" onclick="setMode(this)">Uniform velocity<br><span style="color:var(--muted);font-size:0.55rem">All same speed & direction</span></button>
       </div>
     </div>
 
@@ -385,6 +386,11 @@ function createParticles(n, radius, speedScale) {
       vz = speedScale * gaussRand();
     } else if (mode === 'single') {
       if (i === 0) { vx = speedScale * 4; vy = speedScale * 0.5; vz = speedScale * 0.5; }
+    } else if (mode === 'uniform') {
+      // All particles get the same speed in the same direction
+      vx = speedScale * 2;
+      vy = speedScale * 0.5;
+      vz = speedScale * 0.5;
     }
 
     ps.push({ x, y, z, vx, vy, vz, radius, id: i });
