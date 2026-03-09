@@ -16,6 +16,7 @@
     --accent3: #52c77a;
     --text: #2d3e50;
     --muted: #8fa3b8;
+    --w: 500px;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -27,69 +28,107 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    align-items: center;
   }
 
   header {
-    padding: 16px 24px;
+    width: 100%;
+    padding: 14px 20px;
     border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: baseline;
-    gap: 16px;
+    text-align: center;
+    background: var(--panel);
   }
 
   header h1 {
     font-family: 'Syne', sans-serif;
     font-weight: 800;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     color: var(--accent);
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
 
-  header span {
-    font-size: 0.65rem;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-  }
-
   .main {
     display: flex;
-    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: var(--w);
+    padding: 16px 12px 32px;
     gap: 0;
-    overflow: hidden;
+  }
+
+  /* Fixed-size simulation canvas — shrinks on narrow screens, never grows */
+  canvas#sim {
+    display: block;
+    width: 500px;
+    height: 400px;
+    max-width: 100%;
+    /* height scales proportionally on small screens */
+    aspect-ratio: 5 / 4;
+    border: 1px solid var(--border);
+    background: #fff;
+  }
+
+  /* PLOT */
+  .plot-wrap {
+    width: 500px;
+    max-width: 100%;
+    border: 1px solid var(--border);
+    border-top: none;
+    background: var(--panel);
+    padding: 10px 14px 8px;
+  }
+
+  .plot-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+
+  canvas#plot {
+    display: block;
+    width: 100%;
+    height: 120px;
   }
 
   /* CONTROLS PANEL */
   .controls {
-    width: 240px;
-    min-width: 240px;
+    width: 500px;
+    max-width: 100%;
     background: var(--panel);
-    border-right: 1px solid var(--border);
-    padding: 20px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-top: none;
+    padding: 16px 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
+  }
+
+  .controls .full-width {
+    grid-column: 1 / -1;
   }
 
   .ctrl-group label {
     display: block;
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
 
   .ctrl-group .val-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
   }
 
   .ctrl-group .val-row span {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--accent);
   }
 
@@ -102,7 +141,7 @@
   .mode-btns {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
   }
 
   .mode-btn {
@@ -110,9 +149,9 @@
     border: 1px solid var(--border);
     color: var(--muted);
     font-family: 'Space Mono', monospace;
-    font-size: 0.62rem;
-    letter-spacing: 0.08em;
-    padding: 8px 10px;
+    font-size: 0.58rem;
+    letter-spacing: 0.06em;
+    padding: 7px 9px;
     cursor: pointer;
     text-align: left;
     transition: all 0.15s;
@@ -129,15 +168,15 @@
   .action-btns {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 7px;
   }
 
   .btn {
     font-family: 'Space Mono', monospace;
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    padding: 10px;
+    padding: 9px;
     cursor: pointer;
     border: 1px solid;
     transition: all 0.15s;
@@ -147,7 +186,7 @@
   .btn-primary {
     background: var(--accent);
     border-color: var(--accent);
-    color: var(--bg);
+    color: #fff;
   }
   .btn-primary:hover { opacity: 0.85; }
 
@@ -159,60 +198,16 @@
   .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
 
   .stats {
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     line-height: 1.9;
     color: var(--muted);
   }
   .stats b { color: var(--text); }
 
-  /* SIM + PLOT AREA */
-  .sim-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    overflow: hidden;
-  }
-
-  .canvas-wrap {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-    min-height: 0;
-  }
-
-  canvas#sim {
-    display: block;
-    width: 100%;
-    height: 100%;
-    image-rendering: pixelated;
-  }
-
-  .plot-wrap {
-    height: 160px;
-    border-top: 1px solid var(--border);
-    background: var(--panel);
-    position: relative;
-    padding: 12px 16px 8px;
-  }
-
-  .plot-label {
-    font-size: 0.55rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 6px;
-  }
-
-  canvas#plot {
-    display: block;
-    width: 100%;
-    height: calc(100% - 22px);
-  }
-
   .divider {
     height: 1px;
     background: var(--border);
+    grid-column: 1 / -1;
   }
 </style>
 </head>
@@ -223,6 +218,13 @@
 </header>
 
 <div class="main">
+
+  <canvas id="sim" width="500" height="400"></canvas>
+
+  <div class="plot-wrap">
+    <div class="plot-label">Velocity Distribution</div>
+    <canvas id="plot"></canvas>
+  </div>
 
   <div class="controls">
 
@@ -277,18 +279,6 @@
       KE: <b>—</b>
     </div>
 
-  </div>
-
-  <div class="sim-area">
-    <div class="canvas-wrap">
-      <canvas id="sim"></canvas>
-    </div>
-    <div class="plot-wrap">
-      <div class="plot-label">Velocity Distribution</div>
-      <canvas id="plot"></canvas>
-    </div>
-  </div>
-
 </div>
 
 <script>
@@ -341,17 +331,20 @@ function togglePause() {
   if (!paused && running) loop();
 }
 
-// ─── RESIZE ────────────────────────────────────────────────────────────────
-function resizeCanvases() {
-  const wrap = simCanvas.parentElement;
-  simCanvas.width = wrap.clientWidth;
-  simCanvas.height = wrap.clientHeight;
-  const pw = plotCanvas.parentElement;
-  plotCanvas.width = pw.clientWidth - 32;
-  plotCanvas.height = pw.clientHeight - 30;
+// ─── CANVAS SETUP ──────────────────────────────────────────────────────────
+function setupCanvases() {
+  // Sim canvas is fixed at 500×400 logical pixels
+  simCanvas.width = 500;
+  simCanvas.height = 400;
+  // Plot canvas matches its rendered width
+  plotCanvas.width = plotCanvas.offsetWidth || 472;
+  plotCanvas.height = 120;
 }
 
-window.addEventListener('resize', () => { resizeCanvases(); });
+window.addEventListener('resize', () => {
+  plotCanvas.width = plotCanvas.offsetWidth || 472;
+  plotCanvas.height = 120;
+});
 
 // ─── PARTICLE CREATION ─────────────────────────────────────────────────────
 function gaussRand() {
@@ -646,7 +639,7 @@ function restart() {
   if (animId) cancelAnimationFrame(animId);
   paused = false;
   document.getElementById('pauseBtn').textContent = '⏸ Pause';
-  resizeCanvases();
+  setupCanvases();
   collisionCount = 0;
   lastTime = null;
   autoXMax = 0;
@@ -663,7 +656,7 @@ function restart() {
 
 // ─── INIT ──────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  resizeCanvases();
+  setupCanvases();
   restart();
 });
 </script>
