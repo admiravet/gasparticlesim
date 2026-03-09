@@ -576,18 +576,15 @@ function renderPlot() {
   }
   pctx.stroke();
 
-  // Median line
-  const sorted = [...speeds].sort((a, b) => a - b);
-  const median = sorted.length % 2 === 0
-    ? (sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2
-    : sorted[Math.floor(sorted.length/2)];
-  const medianX = (median / axisMax) * W;
+  // RMS line
+  const rms = Math.sqrt(speeds.reduce((a, s) => a + s*s, 0) / speeds.length);
+  const rmsX = (rms / axisMax) * W;
   pctx.beginPath();
   pctx.strokeStyle = '#52c77a';
   pctx.lineWidth = 1.5;
   pctx.setLineDash([4, 3]);
-  pctx.moveTo(medianX, 0);
-  pctx.lineTo(medianX, H);
+  pctx.moveTo(rmsX, 0);
+  pctx.lineTo(rmsX, H);
   pctx.stroke();
   pctx.setLineDash([]);
 
@@ -613,7 +610,7 @@ function renderPlot() {
   pctx.fillStyle = '#f4845f';
   pctx.fillText(`— mean ${avgSpd.toFixed(2)}`, W - 80, 24);
   pctx.fillStyle = '#52c77a';
-  pctx.fillText(`— median ${median.toFixed(2)}`, W - 94, 36);
+  pctx.fillText(`— rms ${rms.toFixed(2)}`, W - 72, 36);
 }
 
 // ─── STATS ─────────────────────────────────────────────────────────────────
