@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gas Particle Simulation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #f0f4f8;
+    --panel: #ffffff;
+    --border: #d0dce8;
+    --accent: #5b8dee;
+    --accent2: #f4845f;
+    --accent3: #52c77a;
+    --text: #2d3e50;
+    --muted: #8fa3b8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  header span {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .main {
+    display: flex;
+    flex: 1;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  /* CONTROLS PANEL */
+  .controls {
+    width: 240px;
+    min-width: 240px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+  }
+
+  .ctrl-group label {
+    display: block;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .ctrl-group .val-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .ctrl-group .val-row span {
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+
+  input[type=range] {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .mode-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .mode-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    padding: 8px 10px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .mode-btn:hover { border-color: var(--accent); color: var(--text); }
+  .mode-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(91,141,238,0.10);
+  }
+
+  .action-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 10px;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all 0.15s;
+    font-weight: 700;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+  }
+  .btn-primary:hover { opacity: 0.85; }
+
+  .btn-secondary {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .stats {
+    font-size: 0.6rem;
+    line-height: 1.9;
+    color: var(--muted);
+  }
+  .stats b { color: var(--text); }
+
+  /* SIM + PLOT AREA */
+  .sim-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  canvas#sim {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+  }
+
+  .plot-wrap {
+    height: 160px;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+    position: relative;
+    padding: 12px 16px 8px;
+  }
+
+  .plot-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  canvas#plot {
+    display: block;
+    width: 100%;
+    height: calc(100% - 22px);
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Particle gas simulation</h1>
+</header>
+
+<div class="main">
+
+  <div class="controls">
+
+    <div class="ctrl-group">
+      <label>Particles</label>
+      <div class="val-row"><span id="nVal">80</span></div>
+      <input type="range" id="nSlider" min="5" max="3000" value="80">
+    </div>
+
+    <div class="ctrl-group">
+      <label>Radius (px)</label>
+      <div class="mode-btns" style="flex-direction:row;">
+        <button class="mode-btn active" id="rBtn1" onclick="setRadius(1,this)" style="flex:1;text-align:center">1</button>
+        <button class="mode-btn" id="rBtn10" onclick="setRadius(10,this)" style="flex:1;text-align:center">10</button>
+      </div>
+    </div>
+
+    <div class="ctrl-group">
+      <label>Initial Velocity</label>
+      <div class="val-row"><span id="sVal">1.0</span></div>
+      <input type="range" id="sSlider" min="1" max="30" value="10">
+    </div>
+
+    <div class="ctrl-group">
+      <label>Plot X-axis Max</label>
+      <div class="val-row"><span id="xmaxVal">auto</span></div>
+      <input type="range" id="xmaxSlider" min="0" max="30" value="0">
+      <div style="font-size:0.55rem;color:var(--muted);margin-top:4px">0 = auto-grow</div>
+    </div>
+
+
+
+    <div class="ctrl-group">
+      <label>Initial Mode</label>
+      <div class="mode-btns">
+        <button class="mode-btn active" data-mode="maxwell" onclick="setMode(this)">Random velocities</button>
+        <button class="mode-btn" data-mode="single" onclick="setMode(this)">Single Particle<br><span style="color:var(--muted);font-size:0.55rem">One moving, rest at rest</span></button>
+      </div>
+    </div>
+
+    <div class="action-btns">
+      <button class="btn btn-primary" onclick="restart()">↺ Restart</button>
+      <button class="btn btn-secondary" id="pauseBtn" onclick="togglePause()">⏸ Pause</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="stats" id="stats">
+      Particles: <b>—</b><br>
+      Avg speed: <b>—</b><br>
+      Collisions: <b>—</b><br>
+      KE: <b>—</b>
+    </div>
+
+  </div>
+
+  <div class="sim-area">
+    <div class="canvas-wrap">
+      <canvas id="sim"></canvas>
+    </div>
+    <div class="plot-wrap">
+      <div class="plot-label">Velocity Distribution</div>
+      <canvas id="plot"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── GLOBALS ───────────────────────────────────────────────────────────────
+const simCanvas = document.getElementById('sim');
+const plotCanvas = document.getElementById('plot');
+const sctx = simCanvas.getContext('2d');
+const pctx = plotCanvas.getContext('2d');
+
+let particles = [];
+let running = false;
+let paused = false;
+let animId = null;
+let collisionCount = 0;
+let mode = 'maxwell';
+let plotXMax = 0;
+let plotYMax = 0;
+let selectedRadius = 1;
+
+// Controls
+const nSlider = document.getElementById('nSlider');
+const sSlider = document.getElementById('sSlider');
+const xmaxSlider = document.getElementById('xmaxSlider');
+
+nSlider.oninput = () => document.getElementById('nVal').textContent = nSlider.value;
+sSlider.oninput = () => {
+  document.getElementById('sVal').textContent = (sSlider.value / 10).toFixed(1);
+};
+xmaxSlider.oninput = () => {
+  const v = parseInt(xmaxSlider.value);
+  document.getElementById('xmaxVal').textContent = v === 0 ? 'auto' : v;
+  plotXMax = v;
+};
+
+function setRadius(r, el) {
+  selectedRadius = r;
+  document.querySelectorAll('#rBtn1,#rBtn10').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function setMode(el) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  mode = el.dataset.mode;
+}
+
+function togglePause() {
+  paused = !paused;
+  document.getElementById('pauseBtn').textContent = paused ? '▶ Resume' : '⏸ Pause';
+  if (!paused && running) loop();
+}
+
+// ─── RESIZE ────────────────────────────────────────────────────────────────
+function resizeCanvases() {
+  const wrap = simCanvas.parentElement;
+  simCanvas.width = wrap.clientWidth;
+  simCanvas.height = wrap.clientHeight;
+  const pw = plotCanvas.parentElement;
+  plotCanvas.width = pw.clientWidth - 32;
+  plotCanvas.height = pw.clientHeight - 30;
+}
+
+window.addEventListener('resize', () => { resizeCanvases(); });
+
+// ─── PARTICLE CREATION ─────────────────────────────────────────────────────
+function gaussRand() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function createParticles(n, radius, speedScale) {
+  const W = simCanvas.width, H = simCanvas.height;
+  const ps = [];
+  const maxAttempts = 2000;
+
+  for (let i = 0; i < n; i++) {
+    let x, y, attempts = 0, ok = false;
+    while (attempts++ < maxAttempts) {
+      x = radius + Math.random() * (W - 2 * radius);
+      y = radius + Math.random() * (H - 2 * radius);
+      ok = true;
+      for (const p of ps) {
+        const dx = p.x - x, dy = p.y - y;
+        if (Math.sqrt(dx*dx + dy*dy) < 2 * radius + 1) { ok = false; break; }
+      }
+      if (ok) break;
+    }
+
+    let vx = 0, vy = 0;
+    if (mode === 'maxwell') {
+      const spd = speedScale * Math.abs(gaussRand() + 1.5);
+      const ang = Math.random() * 2 * Math.PI;
+      vx = spd * Math.cos(ang);
+      vy = spd * Math.sin(ang);
+    } else if (mode === 'single') {
+      if (i === 0) {
+        vx = speedScale * 4;
+        vy = speedScale * 0.5;
+      }
+    }
+
+    ps.push({ x, y, vx, vy, radius, id: i });
+  }
+  return ps;
+}
+
+// ─── PHYSICS ───────────────────────────────────────────────────────────────
+function step(dt) {
+  const W = simCanvas.width, H = simCanvas.height;
+  dt = Math.min(dt, 0.032);
+
+  // Move
+  for (const p of particles) {
+    p.x += p.vx * dt * 60;
+    p.y += p.vy * dt * 60;
+  }
+
+  // Wall collisions
+  for (const p of particles) {
+    if (p.x - p.radius < 0)    { p.x = p.radius;      p.vx = Math.abs(p.vx); }
+    if (p.x + p.radius > W)    { p.x = W - p.radius;  p.vx = -Math.abs(p.vx); }
+    if (p.y - p.radius < 0)    { p.y = p.radius;      p.vy = Math.abs(p.vy); }
+    if (p.y + p.radius > H)    { p.y = H - p.radius;  p.vy = -Math.abs(p.vy); }
+  }
+
+  // Particle-particle collisions (rigid sphere elastic)
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const a = particles[i], b = particles[j];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dist2 = dx*dx + dy*dy;
+      const minDist = a.radius + b.radius;
+
+      if (dist2 < minDist * minDist && dist2 > 0) {
+        const dist = Math.sqrt(dist2);
+        // Separate overlap
+        const overlap = (minDist - dist) / 2;
+        const nx = dx / dist, ny = dy / dist;
+        a.x -= nx * overlap;
+        a.y -= ny * overlap;
+        b.x += nx * overlap;
+        b.y += ny * overlap;
+
+        // Elastic collision (equal mass)
+        const dvx = a.vx - b.vx, dvy = a.vy - b.vy;
+        const dot = dvx * nx + dvy * ny;
+        if (dot > 0) {
+          // impulse
+          a.vx -= dot * nx;
+          a.vy -= dot * ny;
+          b.vx += dot * nx;
+          b.vy += dot * ny;
+          collisionCount++;
+        }
+      }
+    }
+  }
+}
+
+// ─── RENDER SIM ────────────────────────────────────────────────────────────
+function speedToColor(t) {
+  // t in [0,1]: 0=blue, 0.5=green, 1=red  (via HSL hue 240→0)
+  const hue = Math.round((1 - t) * 240);
+  return `hsl(${hue}, 80%, 42%)`;
+}
+
+function renderSim() {
+  const W = simCanvas.width, H = simCanvas.height;
+  sctx.fillStyle = '#ffffff';
+  sctx.fillRect(0, 0, W, H);
+
+  // Box border
+  sctx.strokeStyle = 'rgba(91,141,238,0.25)';
+  sctx.lineWidth = 1.5;
+  sctx.strokeRect(0.5, 0.5, W - 1, H - 1);
+
+  // Compute max speed this frame for normalisation
+  let maxSpd = 0;
+  for (const p of particles) {
+    const s = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
+    if (s > maxSpd) maxSpd = s;
+  }
+  if (maxSpd === 0) maxSpd = 1;
+
+  for (const p of particles) {
+    const spd = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
+    const t = spd / maxSpd;
+    const col = speedToColor(t);
+
+    // Velocity trail
+    if (spd > 0.3) {
+      const len = Math.min(spd * 1.5, 22);
+      const ux = p.vx / spd, uy = p.vy / spd;
+      sctx.beginPath();
+      sctx.moveTo(p.x, p.y);
+      sctx.lineTo(p.x - ux * len, p.y - uy * len);
+      sctx.strokeStyle = `hsla(${Math.round((1-t)*240)},80%,42%,0.2)`;
+      sctx.lineWidth = p.radius * 0.7;
+      sctx.stroke();
+    }
+
+    // Particle disc
+    const grd = sctx.createRadialGradient(p.x - p.radius*0.3, p.y - p.radius*0.3, 0, p.x, p.y, p.radius);
+    grd.addColorStop(0, `hsla(${Math.round((1-t)*240)},60%,72%,1)`);
+    grd.addColorStop(1, col);
+    sctx.beginPath();
+    sctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+    sctx.fillStyle = grd;
+    sctx.fill();
+  }
+}
+
+// ─── VELOCITY DISTRIBUTION PLOT ────────────────────────────────────────────
+let plotTick = 0;
+let autoXMax = 0;
+let autoYMax = 0; // sticky auto-grow maximum
+
+function renderPlot() {
+  plotTick++;
+  if (plotTick % 6 !== 0) return;
+
+  const W = plotCanvas.width, H = plotCanvas.height;
+  pctx.clearRect(0, 0, W, H);
+
+  const speeds = particles.map(p => Math.sqrt(p.vx*p.vx + p.vy*p.vy));
+  if (speeds.length === 0) return;
+
+  const currentMax = Math.max(...speeds);
+
+  // Determine x-axis ceiling
+  let axisMax;
+  if (plotXMax > 0) {
+    // Manual override from slider
+    axisMax = plotXMax;
+  } else {
+    // Auto-grow: only increase, never decrease
+    if (currentMax > autoXMax) autoXMax = currentMax * 1.1;
+    axisMax = autoXMax || 1;
+  }
+
+  const bins = 30;
+  const hist = new Array(bins).fill(0);
+  for (const s of speeds) {
+    const bi = Math.min(Math.floor(s / axisMax * bins), bins - 1);
+    hist[bi]++;
+  }
+
+  const maxCount = Math.max(...hist) || 1;
+  const bw = W / bins;
+
+  // Y-axis always fits the tallest bar
+  const axisYMax = maxCount;
+
+  // Axes
+  pctx.strokeStyle = 'rgba(143,163,184,0.5)';
+  pctx.lineWidth = 1;
+  pctx.beginPath();
+  pctx.moveTo(0, H); pctx.lineTo(W, H);
+  pctx.stroke();
+
+  // Bars — blue→red gradient matching the simulation
+  for (let i = 0; i < bins; i++) {
+    const bh = Math.min((hist[i] / axisYMax) * (H - 4), H - 4);
+    const t = i / (bins - 1);
+    const hue = Math.round((1 - t) * 240);
+    pctx.fillStyle = `hsla(${hue},70%,55%,0.75)`;
+    pctx.fillRect(i * bw + 1, H - bh, bw - 2, bh);
+  }
+
+  // Maxwell–Boltzmann overlay
+  const avgSpd = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+  const sigma = avgSpd / Math.sqrt(Math.PI / 2);
+  const norm = particles.length * (axisMax / bins);
+
+  pctx.beginPath();
+  pctx.strokeStyle = '#5b8dee';
+  pctx.lineWidth = 1.5;
+  for (let i = 0; i <= W; i++) {
+    const v = (i / W) * axisMax;
+    const fv = norm * (v / (sigma * sigma)) * Math.exp(-v * v / (2 * sigma * sigma));
+    const yy = H - (fv / axisYMax) * (H - 4);
+    i === 0 ? pctx.moveTo(i, yy) : pctx.lineTo(i, yy);
+  }
+  pctx.stroke();
+
+  // Median line
+  const sorted = [...speeds].sort((a, b) => a - b);
+  const median = sorted.length % 2 === 0
+    ? (sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2
+    : sorted[Math.floor(sorted.length/2)];
+  const medianX = (median / axisMax) * W;
+  pctx.beginPath();
+  pctx.strokeStyle = '#52c77a';
+  pctx.lineWidth = 1.5;
+  pctx.setLineDash([4, 3]);
+  pctx.moveTo(medianX, 0);
+  pctx.lineTo(medianX, H);
+  pctx.stroke();
+  pctx.setLineDash([]);
+
+  // Average line
+  const meanX = (avgSpd / axisMax) * W;
+  pctx.beginPath();
+  pctx.strokeStyle = '#f4845f';
+  pctx.lineWidth = 1.5;
+  pctx.setLineDash([4, 3]);
+  pctx.moveTo(meanX, 0);
+  pctx.lineTo(meanX, H);
+  pctx.stroke();
+  pctx.setLineDash([]);
+
+  // Labels
+  pctx.fillStyle = '#8fa3b8';
+  pctx.font = '9px Space Mono, monospace';
+  pctx.fillText('0', 2, H - 2);
+  pctx.fillText(axisMax.toFixed(1), W - 28, H - 2);
+  pctx.fillText(Math.round(axisYMax), 4, 10);
+  pctx.fillStyle = '#5b8dee';
+  pctx.fillText('— MB fit', W - 54, 12);
+  pctx.fillStyle = '#f4845f';
+  pctx.fillText(`— mean ${avgSpd.toFixed(2)}`, W - 80, 24);
+  pctx.fillStyle = '#52c77a';
+  pctx.fillText(`— median ${median.toFixed(2)}`, W - 94, 36);
+}
+
+// ─── STATS ─────────────────────────────────────────────────────────────────
+let statTick = 0;
+function updateStats() {
+  statTick++;
+  if (statTick % 20 !== 0) return;
+  const speeds = particles.map(p => Math.sqrt(p.vx*p.vx + p.vy*p.vy));
+  const avg = speeds.length ? (speeds.reduce((a,b)=>a+b,0)/speeds.length).toFixed(2) : '—';
+  const ke = speeds.length ? (speeds.reduce((a,s)=>a+s*s,0)*0.5).toFixed(1) : '—';
+  document.getElementById('stats').innerHTML =
+    `Particles: <b>${particles.length}</b><br>Avg speed: <b>${avg}</b><br>Collisions: <b>${collisionCount}</b><br>Total KE: <b>${ke}</b>`;
+}
+
+// ─── LOOP ──────────────────────────────────────────────────────────────────
+let lastTime = null;
+function loop(ts) {
+  if (paused) return;
+  if (lastTime === null) lastTime = ts;
+  const dt = (ts - lastTime) / 1000;
+  lastTime = ts;
+
+  step(dt);
+  renderSim();
+  renderPlot();
+  updateStats();
+
+  animId = requestAnimationFrame(loop);
+}
+
+// ─── RESTART ───────────────────────────────────────────────────────────────
+function restart() {
+  if (animId) cancelAnimationFrame(animId);
+  paused = false;
+  document.getElementById('pauseBtn').textContent = '⏸ Pause';
+  resizeCanvases();
+  collisionCount = 0;
+  lastTime = null;
+  autoXMax = 0;
+  autoYMax = 0;
+
+  const n = parseInt(nSlider.value);
+  const r = selectedRadius;
+  const spd = parseFloat(sSlider.value) / 10;
+  particles = createParticles(n, r, spd);
+
+  running = true;
+  animId = requestAnimationFrame(loop);
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  resizeCanvases();
+  restart();
+});
+</script>
+</body>
+</html>
