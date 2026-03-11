@@ -230,16 +230,14 @@
 
     <div class="ctrl-group">
       <label>Particles</label>
-      <div class="val-row"><span id="nVal">80</span></div>
-      <input type="range" id="nSlider" min="5" max="3000" value="80">
+      <div class="val-row"><span id="nVal">80</span> <span id="nCap" style="font-size:0.55rem;color:var(--muted)">max 31831</span></div>
+      <input type="range" id="nSlider" min="0" max="1000" value="627">
     </div>
 
     <div class="ctrl-group">
       <label>Radius (px)</label>
-      <div class="mode-btns" style="flex-direction:row;">
-        <button class="mode-btn active" id="rBtn1" onclick="setRadius(1,this)" style="flex:1;text-align:center">1</button>
-        <button class="mode-btn" id="rBtn10" onclick="setRadius(10,this)" style="flex:1;text-align:center">10</button>
-      </div>
+      <div class="val-row"><span id="rVal">1</span></div>
+      <input type="range" id="rSlider" min="1" max="10" value="1">
     </div>
 
     <div class="ctrl-group">
@@ -304,7 +302,41 @@ const nSlider = document.getElementById('nSlider');
 const sSlider = document.getElementById('sSlider');
 const xmaxSlider = document.getElementById('xmaxSlider');
 
-nSlider.oninput = () => document.getElementById('nVal').textContent = nSlider.value;
+// Logarithmic mapping: slider 0-1000 → particles 5-10000
+// Max particles at 0.5 packing fraction: phi = n * pi * r^2 / (W*H) <= 0.5
+function maxParticles(r) {
+  const W = 500, H = 400;
+  return Math.min(Math.floor(0.5 * W * H / (Math.PI * r * r)), 5000);
+}
+
+function sliderToN(v, r) {
+  const cap = maxParticles(r || selectedRadius);
+  return Math.min(Math.round(5 * Math.pow(cap / 5, v / 1000)), cap);
+}
+function nToSlider(n, r) {
+  const cap = maxParticles(r || selectedRadius);
+  return Math.round(Math.log(Math.min(n, cap) / 5) / Math.log(cap / 5) * 1000);
+}
+
+function updateNSlider() {
+  const cap = maxParticles(selectedRadius);
+  const current = sliderToN(parseInt(nSlider.value));
+  const clamped = Math.min(current, cap);
+  nSlider.value = nToSlider(clamped);
+  document.getElementById('nVal').textContent = clamped;
+  document.getElementById('nCap').textContent = `max ${cap}`;
+}
+
+nSlider.oninput = () => {
+  document.getElementById('nVal').textContent = sliderToN(parseInt(nSlider.value));
+};
+
+const rSlider = document.getElementById('rSlider');
+rSlider.oninput = () => {
+  selectedRadius = parseInt(rSlider.value);
+  document.getElementById('rVal').textContent = selectedRadius;
+  updateNSlider();
+};
 sSlider.oninput = () => {
   document.getElementById('sVal').textContent = (sSlider.value / 10).toFixed(1);
 };
@@ -313,12 +345,6 @@ xmaxSlider.oninput = () => {
   document.getElementById('xmaxVal').textContent = v === 0 ? 'auto' : v;
   plotXMax = v;
 };
-
-function setRadius(r, el) {
-  selectedRadius = r;
-  document.querySelectorAll('#rBtn1,#rBtn10').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-}
 
 function setMode(el) {
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -348,11 +374,13 @@ window.addEventListener('resize', () => {
 });
 
 // ─── PARTICLE CREATION ─────────────────────────────────────────────────────
-function gaussRand() {
+function gaussRand2() {
+  // Box–Muller: returns two independent standard normals
   let u = 0, v = 0;
   while (u === 0) u = Math.random();
   while (v === 0) v = Math.random();
-  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  const mag = Math.sqrt(-2 * Math.log(u));
+  return [mag * Math.cos(2 * Math.PI * v), mag * Math.sin(2 * Math.PI * v)];
 }
 
 function createParticles(n, radius, speedScale) {
@@ -375,10 +403,9 @@ function createParticles(n, radius, speedScale) {
 
     let vx = 0, vy = 0;
     if (mode === 'maxwell') {
-      const spd = speedScale * Math.abs(gaussRand() + 1.5);
-      const ang = Math.random() * 2 * Math.PI;
-      vx = spd * Math.cos(ang);
-      vy = spd * Math.sin(ang);
+      const [z1, z2] = gaussRand2();
+      vx = speedScale * z1;
+      vy = speedScale * z2;
     } else if (mode === 'uniform') {
       vx = speedScale * 4;
       vy = 0;
@@ -649,8 +676,8 @@ function restart() {
   autoXMax = 0;
   autoYMax = 0;
 
-  const n = parseInt(nSlider.value);
-  const r = selectedRadius;
+  const n = Math.min(sliderToN(parseInt(nSlider.value)), maxParticles(parseInt(rSlider.value)));
+  const r = parseInt(rSlider.value);
   const spd = parseFloat(sSlider.value) / 10;
   particles = createParticles(n, r, spd);
 
@@ -660,6 +687,9 @@ function restart() {
 
 // ─── INIT ──────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
+  nSlider.value = nToSlider(80, 1);
+  document.getElementById('nVal').textContent = 80;
+  document.getElementById('nCap').textContent = `max ${maxParticles(1)}`;
   setupCanvases();
   restart();
 });
